@@ -6,7 +6,7 @@ line-length = 88
 indent-width = 4
 show-fixes = true
 lint.select = ["E4", "E7", "E9", "F", "I", "UP", "N"]
-exclude = ["main/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "main/apps.py", "main/admin.py", "airline_mgmt/celery.py"]
+exclude = ["api/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py"]
 lint.ignore = []
 
 [tool.coverage.report]
@@ -23,15 +23,10 @@ ignore-init-module = true
 ignore-nested-classes = true
 ignore_magic = true
 ignore_semiprivate = true
-exclude = ["main/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "main/apps.py", "main/admin.py", "airline_mgmt/celery.py"]
+exclude = ["api/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py"]
 quiet = false
 color = true
 omit_covered_files = false
 
 [tool.ruff.lint.isort]
-known-first-party = ["main", "airline_mgmt"]
-
-#[tool.pytest.ini_options]
-#DJANGO_SETTINGS_MODULE = "airline_mgmt.settings"
-#python_files = ["test_*.py", "*_test.py"]
-#addopts = "-q --disable-warnings --maxfail=1"
+known-first-party = ["external_bank", "financial_data_adapter", "api"]
