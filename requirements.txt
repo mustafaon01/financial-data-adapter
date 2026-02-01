@@ -1,14 +1,25 @@
 asgiref==3.11.0
 attrs==25.4.0
+certifi==2026.1.4
 click==8.3.1
+clickhouse-connect==0.10.0
 colorama==0.4.6
 Django==6.0.1
+django-filter==25.2
 djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+gunicorn==24.1.1
 interrogate==1.7.0
-packaging @ file:///opt/miniconda3/conda-bld/packaging_1761049079150/work
+lz4==4.4.5
+psycopg2-binary==2.9.11
 py==1.11.0
+PyJWT==2.11.0
+python-dotenv==1.2.1
+pytz==2025.2
 ruff==0.14.14
 setuptools==80.10.1
 sqlparse==0.5.5
 tabulate==0.9.0
+urllib3==2.6.3
 wheel==0.46.3
+zstandard==0.25.0
