@@ -61,7 +61,8 @@ class Batch(models.Model):
     """
     Audit log for ingestion batches.
     """
-
+    BatchStatus = BatchStatus
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="batches")
     status = models.CharField(
