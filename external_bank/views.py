@@ -14,11 +14,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import MockLoan, DatasetState
-from .csv_read_helpers import normalize_bank_code, normalize_loan_type, sniff_dialect, detect_external_id, safe_str
+from .csv_read_helpers import (
+    normalize_bank_code,
+    normalize_loan_type,
+    sniff_dialect,
+    detect_external_id,
+    safe_str,
+)
 
 logger = logging.getLogger(__name__)
 
 ALLOWED_LOAN_TYPES = {"RETAIL", "COMMERCIAL"}
+
 
 class CSVUploadView(APIView):
     """
@@ -46,14 +53,19 @@ class CSVUploadView(APIView):
         if not loan_type:
             return Response({"error": "loan_type is required"}, status=400)
         if loan_type not in ALLOWED_LOAN_TYPES:
-            return Response({"error": f"loan_type must be one of {sorted(ALLOWED_LOAN_TYPES)}"}, status=400)
+            return Response(
+                {"error": f"loan_type must be one of {sorted(ALLOWED_LOAN_TYPES)}"},
+                status=400,
+            )
         if not file_obj:
             return Response({"error": "No file uploaded"}, status=400)
 
         new_version = uuid.uuid4()
         hasher = hashlib.sha256()
 
-        wrapper = io.TextIOWrapper(file_obj.file, encoding="utf-8", errors="replace", newline="")
+        wrapper = io.TextIOWrapper(
+            file_obj.file, encoding="utf-8", errors="replace", newline=""
+        )
 
         sample = wrapper.read(2048)
         wrapper.seek(0)
@@ -91,7 +103,7 @@ class CSVUploadView(APIView):
                     external_id=ext_id,
                     customer_id=cust_id,
                     payload=row,
-                    dataset_version=new_version
+                    dataset_version=new_version,
                 )
 
                 if len(chunk_map) >= chunk_size:
@@ -168,11 +180,17 @@ class VersionView(APIView):
         loan_type = normalize_loan_type(request.query_params.get("loan_type"))
 
         if not bank_code or not loan_type:
-            return Response({"error": "bank_code and loan_type are required"}, status=400)
+            return Response(
+                {"error": "bank_code and loan_type are required"}, status=400
+            )
 
-        state = DatasetState.objects.filter(bank_code=bank_code, loan_type=loan_type).first()
+        state = DatasetState.objects.filter(
+            bank_code=bank_code, loan_type=loan_type
+        ).first()
         if not state:
-            return Response({"dataset_version": None, "checksum": None, "updated_at": None})
+            return Response(
+                {"dataset_version": None, "checksum": None, "updated_at": None}
+            )
 
         return Response(
             {
@@ -205,7 +223,9 @@ class CurrentDataView(APIView):
         loan_type = normalize_loan_type(request.query_params.get("loan_type"))
 
         if not bank_code or not loan_type:
-            return Response({"error": "bank_code and loan_type are required"}, status=400)
+            return Response(
+                {"error": "bank_code and loan_type are required"}, status=400
+            )
 
         try:
             limit = int(request.query_params.get("limit", 1000))
@@ -222,11 +242,15 @@ class CurrentDataView(APIView):
         except ValueError:
             return Response({"error": "cursor must be an integer"}, status=400)
 
-        state = DatasetState.objects.filter(bank_code=bank_code, loan_type=loan_type).first()
+        state = DatasetState.objects.filter(
+            bank_code=bank_code, loan_type=loan_type
+        ).first()
         current_ver = str(state.dataset_version) if state else None
 
         qs = (
-            MockLoan.objects.filter(bank_code=bank_code, loan_type=loan_type, id__gt=cursor)
+            MockLoan.objects.filter(
+                bank_code=bank_code, loan_type=loan_type, id__gt=cursor
+            )
             .order_by("id")
             .only("id", "payload")[:limit]
         )
