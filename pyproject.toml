@@ -6,7 +6,7 @@ line-length = 88
 indent-width = 4
 show-fixes = true
 lint.select = ["E4", "E7", "E9", "F", "I", "UP", "N"]
-exclude = ["api/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py"]
+exclude = ["api/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py", "test/"]
 lint.ignore = []
 
 [tool.coverage.report]
@@ -23,7 +23,7 @@ ignore-init-module = true
 ignore-nested-classes = true
 ignore_magic = true
 ignore_semiprivate = true
-exclude = ["api/migrations", ".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py"]
+exclude = [".env", ".git", ".github", ".idea", "__pycache__", ".DS_Store", "api/apps.py", "api/admin.py", "airflow/dag", "external_bank/migrations", "api/migrations", "api/apps.py", "external_bank/apps.py", "external_bank/apps.py", "external_bank/tests.py", "api/tests.py"]
 quiet = false
 color = true
 omit_covered_files = false

@@ -1,5 +1,8 @@
+"""External bank route configuration."""
+
 from django.urls import path
-from .views import CSVUploadView, VersionView, CurrentDataView
+
+from .views import CSVUploadView, CurrentDataView, VersionView
 
 urlpatterns = [
     path("upload-csv/", CSVUploadView.as_view()),

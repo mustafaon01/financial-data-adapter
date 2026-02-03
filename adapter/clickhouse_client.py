@@ -1,17 +1,16 @@
-"""Clickhouse connection conf"""
+"""ClickHouse client helper."""
 
-import clickhouse_connect
 import logging
 import os
+
+import clickhouse_connect
 
 logger = logging.getLogger(__name__)
 
 
 class ClickHouseClient:
     """
-    Client for managing ClickHouse database connections and operations.
-
-    :param tenant_schema: The schema name of the tenant (used as database name).
+    Client for ClickHouse operations.
     """
 
     def __init__(self, tenant_schema=None):
@@ -23,18 +22,13 @@ class ClickHouseClient:
 
     def get_db_name(self, tenant_schema):
         """
-        Get the database name from tenant schema.
-
-        :param tenant_schema: The schema name from Postgres.
-        :return: The matching ClickHouse database name.
+        Build database name from tenant schema.
         """
         return f"dwh_{tenant_schema.lower()}"
 
     def get_client(self):
         """
-        Create and return a new ClickHouse client instance.
-
-        :return: A ClickHouse client object.
+        Create a ClickHouse client.
         """
         return clickhouse_connect.get_client(
             host=self.host,
@@ -46,9 +40,7 @@ class ClickHouseClient:
 
     def create_database(self, tenant_schema):
         """
-        Create a new database for a tenant if it does not exist.
-
-        :param tenant_schema: The name of the database to create.
+        Create a database for a tenant.
         """
         db_name = self.get_db_name(tenant_schema)
         client = clickhouse_connect.get_client(
@@ -64,10 +56,6 @@ class ClickHouseClient:
     def execute_query(self, query, params=None):
         """
         Execute a SQL query.
-
-        :param query: The SQL query string.
-        :param params: Optional parameters for the query.
-        :return: The result of the query.
         """
         client = self.get_client()
         return client.query(query, params)
@@ -75,20 +63,13 @@ class ClickHouseClient:
     def insert_data(self, table, data, column_names=None):
         """
         Insert data into a table.
-
-        :param table: Target table name.
-        :param data: List of data rows to insert.
-        :param column_names: List of column names.
         """
         client = self.get_client()
         client.insert(table, data, column_names=column_names)
 
     def swap_tables(self, table_main, table_staging):
         """
-        Replace the main table with the staging table.
-
-        :param table_main: The name of the main table.
-        :param table_staging: The name of the staging table.
+        Replace the main table with staging.
         """
         client = self.get_client()
         try:

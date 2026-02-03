@@ -21,6 +21,7 @@ jobs:
       - name: Install tools
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install ruff interrogate
 
       - name: Ruff (lint)
@@ -31,3 +32,9 @@ jobs:
 
       - name: Interrogate (docstring coverage)
         run: interrogate --config pyproject.toml .
+
+      - name: Pytest
+        env:
+          USE_SQLITE_FOR_TESTS: "1"
+          DJANGO_SECRET_KEY: "test-secret"
+        run: pytest

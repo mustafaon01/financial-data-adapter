@@ -38,7 +38,9 @@ services:
       retries: 30
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     container_name: api
     env_file:
       - .env
@@ -49,9 +51,7 @@ services:
         condition: service_healthy
       clickhouse:
         condition: service_healthy
-    volumes:
-      - .:/app
-    command: ""
+
   airflow-postgres:
     image: postgres:16
     container_name: airflow_postgres
@@ -86,7 +86,7 @@ services:
       - |
         set -e
         airflow db upgrade
-        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
+        airflow users create --username Mustafa --password test123 --firstname Mustafa --lastname Oncu --role Admin --email mustafa.oncu@teamsecfin.com
 
   airflow-webserver:
     image: apache/airflow:2.9.3
@@ -117,6 +117,7 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
     command: scheduler
+
 volumes:
   pg_data:
   ch_data:

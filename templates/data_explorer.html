@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Explorer - FinAdapter{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Data Explorer</h2>
+    </div>
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; align-items: flex-end;">
+        <div style="flex: 1;">
+            <label>Tenant</label>
+            {% if request.user.is_superuser %}
+            <select id="exTenant">
+                <option value="BANK001">BANK001</option>
+                <option value="BANK002">BANK002</option>
+                <option value="BANK003">BANK003</option>
+            </select>
+            {% else %}
+            {% with code=request.session.active_tenant|default:request.user.tenant_link.tenant.tenant_code %}
+            <select id="exTenant" disabled>
+                <option value="{{ code }}">{{ code }}</option>
+            </select>
+            {% endwith %}
+            {% endif %}
+        </div>
+        <div style="flex: 1;">
+            <label>Loan Type</label>
+            <select id="exType">
+                <option value="RETAIL">Retail Loans</option>
+                <option value="COMMERCIAL">Commercial Loans</option>
+            </select>
+        </div>
+        <div style="flex: 1;">
+            <label>Dataset Type</label>
+            <select id="exDatasetType">
+                <option value="CREDIT">Credit Mask</option>
+                <option value="PAYMENT_PLAN">Payment Plan</option>
+            </select>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="fetchData()">Load Data</button>
+        </div>
+    </div>
+
+    <!-- Profiling Stats Grid -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; text-align: center;">
+            <div class="text-xs text-muted">Total Rows</div>
+            <div style="font-size: 1.5rem; font-weight: 700;" id="statTotal">-</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; text-align: center;">
+            <div class="text-xs text-muted">Avg Amount</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);" id="statAvg">-</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; text-align: center;">
+            <div class="text-xs text-muted">Max Amount</div>
+            <div style="font-size: 1.5rem; font-weight: 700;" id="statMax">-</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; text-align: center;">
+            <div class="text-xs text-muted">Null Ratio</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);" id="statNull">-</div>
+        </div>
+    </div>
+
+    <!-- Profiling Tables -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem;">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Numeric Profiling</h3>
+            </div>
+            <div id="numericProfiling" class="table-container" style="max-height: 300px; overflow-y: auto;">
+                <p class="text-muted">Profiling bekleniyor.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Categorical Profiling</h3>
+            </div>
+            <div id="categoricalProfiling" class="table-container" style="max-height: 300px; overflow-y: auto;">
+                <p class="text-muted">Profiling bekleniyor.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Null Ratio (All Fields)</h3>
+            </div>
+            <div id="nullRatioTable" class="table-container" style="max-height: 300px; overflow-y: auto;">
+                <p class="text-muted">Profiling bekleniyor.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if request.user.is_superuser %}
+    <!-- Charts (Superuser only) -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+        <div style="height: 300px;">
+            <canvas id="amountChart"></canvas>
+        </div>
+        <div style="height: 300px;">
+            <canvas id="nullPieChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Data Table -->
+    <h3 style="font-size: 1rem; margin-bottom: 1rem;">Raw Data (First 100)</h3>
+    <div id="dataTable" class="table-container" style="max-height: 400px; overflow-y: auto;">
+        <p class="text-muted">Select filters and click Load Data.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let chartInstance = null;
+    let pieInstance = null;
+
+    const formatNum = (v) => {
+        const n = Number(v);
+        if (v === null || v === undefined || v === '' || Number.isNaN(n)) return '-';
+        return n.toLocaleString();
+    };
+
+    const formatPct = (v) => {
+        const n = Number(v);
+        if (v === null || v === undefined || v === '' || Number.isNaN(n)) return '-';
+        return (n * 100).toFixed(1) + '%';
+    };
+
+    function renderProfilingTables(p) {
+        const numeric = p.numeric_stats || {};
+        const categorical = p.categorical_stats || {};
+        const nullRatio = p.null_ratio || {};
+
+        const numContainer = document.getElementById('numericProfiling');
+        const catContainer = document.getElementById('categoricalProfiling');
+        const nullContainer = document.getElementById('nullRatioTable');
+
+        if (Object.keys(numeric).length === 0) {
+            numContainer.innerHTML = '<p class="text-muted">Sayısal alan bulunamadı.</p>';
+        } else {
+            let html = '<table><thead><tr><th>Field</th><th>Min</th><th>Max</th><th>Avg</th><th>Stddev</th><th>Null %</th></tr></thead><tbody>';
+            Object.entries(numeric).forEach(([field, stats]) => {
+                html += `<tr>
+                    <td>${field}</td>
+                    <td>${formatNum(stats.min)}</td>
+                    <td>${formatNum(stats.max)}</td>
+                    <td>${formatNum(stats.avg)}</td>
+                    <td>${formatNum(stats.stddev)}</td>
+                    <td>${formatPct(stats.null_ratio)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            numContainer.innerHTML = html;
+        }
+
+        if (Object.keys(categorical).length === 0) {
+            catContainer.innerHTML = '<p class="text-muted">Kategorik alan bulunamadı.</p>';
+        } else {
+            let html = '<table><thead><tr><th>Field</th><th>Unique</th><th>Most Frequent</th><th>Null %</th></tr></thead><tbody>';
+            Object.entries(categorical).forEach(([field, stats]) => {
+                html += `<tr>
+                    <td>${field}</td>
+                    <td>${formatNum(stats.unique_count)}</td>
+                    <td>${stats.most_frequent ?? '-'}</td>
+                    <td>${formatPct(stats.null_ratio)}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            catContainer.innerHTML = html;
+        }
+
+        if (Object.keys(nullRatio).length === 0) {
+            nullContainer.innerHTML = '<p class="text-muted">Null ratio hesaplanamadı.</p>';
+        } else {
+            let html = '<table><thead><tr><th>Field</th><th>Null %</th></tr></thead><tbody>';
+            Object.entries(nullRatio).forEach(([field, ratio]) => {
+                html += `<tr><td>${field}</td><td>${formatPct(ratio)}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            nullContainer.innerHTML = html;
+        }
+    }
+
+    function getChartColor(tenant, loanType) {
+        const palette = {
+            BANK001: { RETAIL: '#4f46e5', COMMERCIAL: '#0ea5e9' },
+            BANK002: { RETAIL: '#10b981', COMMERCIAL: '#f59e0b' },
+            BANK003: { RETAIL: '#8b5cf6', COMMERCIAL: '#ef4444' }
+        };
+        return (palette[tenant] && palette[tenant][loanType]) || '#4f46e5';
+    }
+
+    function renderNullPie(nullRatio, label, color) {
+        if (!document.getElementById('nullPieChart')) return;
+        if (pieInstance) pieInstance.destroy();
+        const ctx = document.getElementById('nullPieChart').getContext('2d');
+        const nullPct = Math.max(0, Math.min(1, Number(nullRatio) || 0));
+        const filledPct = 1 - nullPct;
+        pieInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [`${label} Null`, `${label} Non-Null`],
+                datasets: [{
+                    data: [nullPct, filledPct],
+                    backgroundColor: ['#ef4444', color]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    async function fetchData() {
+        const t = document.getElementById('exTenant').value;
+        const l = document.getElementById('exType').value;
+        const d = document.getElementById('exDatasetType').value;
+
+        // 1. Profiling
+        try {
+            const res = await fetch(`/api/profiling/?tenant_id=${t}&loan_type=${l}&dataset_type=${d}`);
+            if (res.ok) {
+                const p = await res.json();
+                document.getElementById('statTotal').innerText = formatNum(p.total_rows);
+                document.getElementById('statAvg').innerText = formatNum(p.avg_amount);
+                document.getElementById('statMax').innerText = formatNum(p.max_amount);
+                document.getElementById('statNull').innerText = formatPct(p.null_ratio_amount);
+                renderProfilingTables(p);
+                const color = getChartColor(t, l);
+                renderNullPie(
+                    p.null_ratio_amount,
+                    d === 'PAYMENT_PLAN' ? 'Installment Amount' : 'Loan Amount',
+                    color
+                );
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        // 2. Data
+        try {
+            const div = document.getElementById('dataTable');
+            div.innerHTML = 'Loading...';
+
+            const res = await fetch(`/api/data/?tenant_id=${t}&loan_type=${l}&dataset_type=${d}`);
+            if (!res.ok) {
+                const err = await res.json();
+                div.innerHTML = `<p class="text-danger">Error: ${err.error}</p>`;
+                return;
+            }
+
+            const data = await res.json();
+            const rows = data.rows;
+
+            if (!rows || rows.length === 0) {
+                div.innerHTML = '<p class="text-muted">No data found.</p>';
+                return;
+            }
+
+            // Determine amount index based on dataset type
+            // CREDIT: external_id, amount, date, status... (Index 1)
+            // PAYMENT: loan_external_id, installment_number, scheduled_payment_date, installment_amount... (Index 3)
+            const amountIdx = (d === 'PAYMENT_PLAN') ? 3 : 1;
+
+            let html = '<table><thead><tr><th>Col 1</th><th>Col 2</th><th>Col 3</th><th>Col 4</th><th>Col 5</th></tr></thead><tbody>';
+            // Limit to 100
+            const amounts = [];
+            rows.slice(0, 500).forEach(r => {
+                html += '<tr>';
+                r.forEach((c, idx) => {
+                    html += `<td>${c}</td>`;
+                    if (idx === amountIdx) amounts.push(parseFloat(c));
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            div.innerHTML = html;
+
+            // Chart
+            const color = getChartColor(t, l);
+            renderChart(amounts, color);
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('dataTable').innerText = 'Failed to load data.';
+        }
+    }
+
+    function renderChart(amounts, color) {
+        if (!document.getElementById('amountChart')) return;
+        if (chartInstance) chartInstance.destroy();
+
+        if (amounts.length === 0) return;
+
+        // Simple binning
+        const bins = 10;
+        const min = Math.min(...amounts);
+        const max = Math.max(...amounts);
+        const step = (max - min) / bins;
+        const labels = [];
+        const data = new Array(bins).fill(0);
+
+        for (let i = 0; i < bins; i++) {
+            labels.push((min + step * i).toFixed(0));
+        }
+
+        amounts.forEach(a => {
+            let idx = Math.floor((a - min) / step);
+            if (idx >= bins) idx = bins - 1;
+            data[idx]++;
+        });
+
+        const ctx = document.getElementById('amountChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Loan Amount Distribution',
+                    data: data,
+                    backgroundColor: color,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

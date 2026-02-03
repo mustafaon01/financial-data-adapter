@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}External Bank Simulation - FinAdapter{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Upload Mock Data</h2>
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Simulate the External Bank environment by uploading a CSV file. This data will be upserted into the mock
+            banking system.
+        </div>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label>Bank Entity</label>
+                {% if request.user.is_superuser %}
+                <select name="bank_code" required>
+                    <option value="BANK001">BANK001</option>
+                    <option value="BANK002">BANK002</option>
+                    <option value="BANK003">BANK003</option>
+                </select>
+                {% else %}
+                {% with code=request.session.active_tenant|default:request.user.tenant_link.tenant.tenant_code %}
+                <select name="bank_code" required disabled>
+                    <option value="{{ code }}">{{ code }}</option>
+                </select>
+                <input type="hidden" name="bank_code" value="{{ code }}">
+                {% endwith %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label>Loan Portfolio</label>
+                <select name="loan_type" required>
+                    <option value="RETAIL">Retail Loans</option>
+                    <option value="COMMERCIAL">Commercial Loans</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Dataset Type</label>
+                <select name="dataset_type" required>
+                    <option value="CREDIT">Credit Mask</option>
+                    <option value="PAYMENT_PLAN">Payment Plan</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>CSV File</label>
+                <input type="file" name="file" accept=".csv" required style="padding: 0.5rem; background: #f9fafb;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                Upload Data
+            </button>
+        </form>
+
+        <div id="result" class="mt-4" style="display: none;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('uploadForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const originalText = btn.innerText;
+        btn.innerText = 'Uploading...';
+        btn.disabled = true;
+
+        const resultEl = document.getElementById('result');
+        resultEl.style.display = 'none';
+
+        try {
+            const formData = new FormData(e.target);
+            // The view creates MockLoan and updates DatasetState
+            // Note: In a real app we might proxy this or have CORS set up. 
+            // Here external_bank is same domain /external-bank/
+            const res = await fetch('/external-bank/upload-csv/', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            resultEl.style.display = 'block';
+            if (res.ok) {
+                resultEl.innerHTML = `<div class="badge badge-success" style="font-size: 0.9rem; width: 100%; display: block; text-align: center; padding: 1rem;">
+                    Success! Version: ${data.dataset_version}<br>
+                    Checksum: ${data.checksum}
+                </div>`;
+                e.target.reset();
+            } else {
+                resultEl.innerHTML = `<div class="badge badge-danger" style="font-size: 0.9rem; width: 100%; display: block; text-align: center; padding: 1rem;">
+                    Error: ${data.error || 'Upload failed'}
+                </div>`;
+            }
+        } catch (err) {
+            console.error(err);
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = `<div class="badge badge-danger">Network Error</div>`;
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a href="{% url 'dashboard' %}" class="logo">
+            FinAdapter
+        </a>
+        <div class="nav-links">
+            <a href="{% url 'dashboard' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{% url 'external_bank' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'external_bank' %}active{% endif %}">Simulation</a>
+            <a href="{% url 'data_explorer' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'data_explorer' %}active{% endif %}">Data
+                Explorer</a>
+        </div>
+        <div class="user-menu text-sm text-muted">
+            {{ request.user.username }}
+            {% if request.session.active_tenant %}
+            · {{ request.session.active_tenant }}
+            {% elif request.user.tenant_link.tenant.tenant_code %}
+            · {{ request.user.tenant_link.tenant.tenant_code }}
+            {% endif %}
+            · <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </div>
+</nav>
