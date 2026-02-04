@@ -102,7 +102,7 @@ The system pulls data from a mock bank, validates it, and stores it in ClickHous
 
 ## Modules
 - `external_bank` (Django app): CSV upload and current data endpoints
-- `api` (Django app): sync, data, profiling
+- `api` (Django app): sync, data, profiling (DRF)
 - `adapter` (helper): validation, normalization, ingestion
 - `airflow`: scheduled sync every 10 minutes
 - `.github/workflows/quality.yml`: lint and test pipeline
@@ -116,7 +116,7 @@ Helper modules keep core logic simple and reusable.
 - Payment plan must match a valid loan
 
 ## Validation and Schema
-- `schemas.py` defines field names and types for each dataset.
+- `adapter/schemas.py` defines field names and types for each dataset.
 - Validation checks required fields, data types, and ranges.
 - Normalization fixes dates, rates, and categories.
 
@@ -130,6 +130,11 @@ Helper modules keep core logic simple and reusable.
 - Tables are created per tenant and swapped with staging.
 - Only the latest snapshot is kept.
 
+## Docker and Obfuscation
+- Image can be pulled from `ghcr.io/mustafaon01/financial-data-adapter:1.0.0`.
+- PyArmor obfuscates Python code before build.
+- This reduces code visibility but is not full protection.
+
 ## django-tenants Note
 The project originally used `django-tenants`.
 We removed it to keep the setup simple and avoid complex schema migrations.
@@ -137,4 +142,4 @@ We removed it to keep the setup simple and avoid complex schema migrations.
 ## Storage
 - Postgres keeps latest data for app view
 - ClickHouse keeps current snapshot tables
-- New data replaces old data14 directories, 38 files
+- New data replaces old data

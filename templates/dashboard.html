@@ -187,7 +187,7 @@
                     badge.style.background = '#dcfce7';
                     badge.style.color = '#15803d';
                     clearInterval(monitorInterval);
-                    loadRecentBatches(); // Refresh list
+                    loadRecentBatches();
                 } else if (data.status === 'FAILED' || data.status === 'FAILED_VALIDATION') {
                     card.style.borderColor = 'var(--danger)';
                     badge.innerText = 'Failed';

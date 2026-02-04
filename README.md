@@ -4,6 +4,7 @@ This project syncs loan data from a mock bank and loads it to a data warehouse.
 
 ## Tech Stack
 - Django (API + UI)
+- Django REST Framework (API)
 - PostgreSQL (app storage)
 - ClickHouse (warehouse)
 - Airflow (scheduled sync)
@@ -28,6 +29,10 @@ This project syncs loan data from a mock bank and loads it to a data warehouse.
    docker compose up --build
    ```
 6. Docker image can also be shared and loaded with `docker load -i <image>.tar`.
+7. Or pull image from registry:
+   ```
+   docker pull ghcr.io/mustafaon01/financial-data-adapter:1.0.0
+   ```
 
 ## Multi-tenant Design
 - Users are linked to one tenant via `UserTenant`.
@@ -110,6 +115,7 @@ GitHub Actions runs:
 ## Obfuscation
 We use PyArmor to obfuscate Python code before building the image.
 This makes reverse engineering harder but does not give full protection.
+The published Docker image is built with PyArmor obfuscation.
 
 ## Notes
 - Large CSV files are processed in chunks to reduce memory.
@@ -120,5 +126,10 @@ At first I tried `django-tenants`. It worked but it was harder to manage.
 It also made the case more complex than required.
 So I removed it and used a simpler tenant mapping with `UserTenant`.
 
+For UI I planned to use React.js, but Django MVT was simpler for this stage.
+
 ## .env Note
 The `.env` file is not in `.gitignore` to make review and setup easier.
+
+## AI Usage
+I used AI tools to help with UI layout and wording.
