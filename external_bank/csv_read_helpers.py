@@ -26,12 +26,10 @@ def sniff_dialect(sample: str) -> csv.Dialect:
     try:
         return csv.Sniffer().sniff(sample)
     except csv.Error:
-        # fallback: detect common delimiters
         if "\t" in sample:
             d = csv.excel_tab
         else:
             d = csv.excel
-        # semicolon is common in TR exports
         if ";" in sample:
             d.delimiter = ";"
         return d

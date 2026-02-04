@@ -61,6 +61,31 @@ class TenantResolverMixin:
         suffix = "retail" if loan_type == "RETAIL" else "commercial"
         return f"{prefix}_{suffix}"
 
+    def get_request_body(self, request):
+        tenant_id = (request.query_params.get("tenant_id") or "").upper()
+        loan_type = (request.query_params.get("loan_type") or "").upper()
+        dataset_type = (request.query_params.get("dataset_type") or "").upper()
+
+        if not tenant_id or loan_type not in ["RETAIL", "COMMERCIAL"]:
+            return Response(
+                {"error": "tenant_id and valid loan_type required"}, status=400
+            )
+        if dataset_type not in ["CREDIT", "PAYMENT_PLAN"]:
+            return Response({"error": "valid dataset_type required"}, status=400)
+
+        tenant = self.resolve_tenant(request, tenant_id)
+        if tenant == "FORBIDDEN":
+            return Response(
+                {"error": "You are not allowed to access this tenant"}, status=403
+            )
+        if not tenant:
+            return Response(
+                {"error": f"Tenant '{tenant_id}' not found or user not assigned"},
+                status=404,
+            )
+
+        return tenant, loan_type, dataset_type
+
 
 class BatchViewSet(TenantResolverMixin, viewsets.ReadOnlyModelViewSet):
     """
@@ -193,27 +218,7 @@ class DataViewSet(TenantResolverMixin, viewsets.ViewSet):
         """
         List data with filters.
         """
-        tenant_id = (request.query_params.get("tenant_id") or "").upper()
-        loan_type = (request.query_params.get("loan_type") or "").upper()
-        dataset_type = (request.query_params.get("dataset_type") or "").upper()
-
-        if not tenant_id or loan_type not in ["RETAIL", "COMMERCIAL"]:
-            return Response(
-                {"error": "tenant_id and valid loan_type required"}, status=400
-            )
-        if dataset_type not in ["CREDIT", "PAYMENT_PLAN"]:
-            return Response({"error": "valid dataset_type required"}, status=400)
-
-        tenant = self.resolve_tenant(request, tenant_id)
-        if tenant == "FORBIDDEN":
-            return Response(
-                {"error": "You are not allowed to access this tenant"}, status=403
-            )
-        if not tenant:
-            return Response(
-                {"error": f"Tenant '{tenant_id}' not found or user not assigned"},
-                status=404,
-            )
+        tenant, loan_type, dataset_type = self.get_request_body(request)
 
         table = self.resolve_ch_table(dataset_type, loan_type)
 
@@ -242,27 +247,7 @@ class ProfilingViewSet(TenantResolverMixin, viewsets.ViewSet):
         """
         Return profiling values.
         """
-        tenant_id = (request.query_params.get("tenant_id") or "").upper()
-        loan_type = (request.query_params.get("loan_type") or "").upper()
-        dataset_type = (request.query_params.get("dataset_type") or "").upper()
-
-        if not tenant_id or loan_type not in ["RETAIL", "COMMERCIAL"]:
-            return Response(
-                {"error": "tenant_id and valid loan_type required"}, status=400
-            )
-        if dataset_type not in ["CREDIT", "PAYMENT_PLAN"]:
-            return Response({"error": "valid dataset_type required"}, status=400)
-
-        tenant = self.resolve_tenant(request, tenant_id)
-        if tenant == "FORBIDDEN":
-            return Response(
-                {"error": "You are not allowed to access this tenant"}, status=403
-            )
-        if not tenant:
-            return Response(
-                {"error": f"Tenant '{tenant_id}' not found or user not assigned"},
-                status=404,
-            )
+        tenant, loan_type, dataset_type = self.get_request_body(request)
 
         if dataset_type == "CREDIT":
             table = self.resolve_ch_table(dataset_type, loan_type)
@@ -278,7 +263,6 @@ class ProfilingViewSet(TenantResolverMixin, viewsets.ViewSet):
         categorical_fields = get_categorical_fields(dataset_type)
         all_fields = get_field_names(dataset_type)
 
-        # Total rows
         total_rows = ch.execute_query(f"SELECT count() FROM {table}").result_rows[0][0]
 
         null_ratio: dict[str, float] = {}
@@ -365,6 +349,7 @@ class ProfilingViewSet(TenantResolverMixin, viewsets.ViewSet):
                 "numeric_stats": numeric_stats,
                 "categorical_stats": categorical_stats,
                 "null_ratio": null_ratio,
+
                 # Backward compatible summary fields for UI cards
                 "avg_amount": amount_stats.get("avg"),
                 "min_amount": amount_stats.get("min"),
