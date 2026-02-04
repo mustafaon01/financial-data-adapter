@@ -86,7 +86,6 @@ def wait_batch(tenant_id, loan_type, **context):
 
         if status in ("FAILED", "FAILED_VALIDATION"):
             msg = last.get("error_message")
-            # İstersen errors'ı da çekip loglayabiliriz
             raise AirflowFailException(
                 f"Batch failed: {batch_id} status={status} msg={msg}"
             )
