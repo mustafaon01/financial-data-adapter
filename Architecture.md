@@ -107,7 +107,7 @@ The system pulls data from a mock bank, validates it, and stores it in ClickHous
 - `airflow`: scheduled sync every 10 minutes
 - `.github/workflows/quality.yml`: lint and test pipeline
 
-We use Django apps for request handling, routing, and models.
+I use Django apps for request handling, routing, and models.
 Helper modules keep core logic simple and reusable.
 
 ## Data Rules
@@ -137,7 +137,7 @@ Helper modules keep core logic simple and reusable.
 
 ## django-tenants Note
 The project originally used `django-tenants`.
-We removed it to keep the setup simple and avoid complex schema migrations.
+I removed it to keep the setup simple and avoid complex schema migrations.
 
 ## Storage
 - Postgres keeps latest data for app view

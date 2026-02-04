@@ -11,27 +11,24 @@ This project syncs loan data from a mock bank and loads it to a data warehouse.
 - GitHub Actions (quality checks)
 
 ## Setup
-1. Copy `.env` and fill database settings.
-2. Install packages:
-   ```
-   pip install -r requirements.txt
-   ```
-3. Run migrations:
-   ```
-   python manage.py migrate
-   ```
-4. Start server:
-   ```
-   python manage.py runserver
-   ```
-5. Or run with Docker:
-   ```
+### run Docker:
+   ```bash
    docker compose up --build
    ```
-6. Docker image can also be shared and loaded with `docker load -i <image>.tar`.
-7. Or pull image from registry:
+
+### No input version
+   ```bash
+   docker compose up -d --build
    ```
-   docker pull ghcr.io/mustafaon01/financial-data-adapter:1.0.0
+
+### stop Docker:
+   ```bash
+   docker compose down
+   ```
+
+### stop Docker and remove volumes:
+   ```bash
+   docker compose down -v
    ```
 
 ## Multi-tenant Design
@@ -113,7 +110,7 @@ GitHub Actions runs:
 - Pytest
 
 ## Obfuscation
-We use PyArmor to obfuscate Python code before building the image.
+I use PyArmor to obfuscate Python code before building the image.
 This makes reverse engineering harder but does not give full protection.
 The published Docker image is built with PyArmor obfuscation.
 
@@ -128,8 +125,15 @@ So I removed it and used a simpler tenant mapping with `UserTenant`.
 
 For UI I planned to use React.js, but Django MVT was simpler for this stage.
 
+## Docker Image Note
+The Docker image is also shared as an artifact.
+It can be loaded with `docker load -i <image>.tar` or pulled from:
+```
+docker pull ghcr.io/mustafaon01/financial-data-adapter:1.0.0
+```
+
 ## .env Note
 The `.env` file is not in `.gitignore` to make review and setup easier.
 
 ## AI Usage
-I used AI tools to help with UI layout and wording.
+I mostly used AI tools for templates, especially UI layout and text.
