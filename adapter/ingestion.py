@@ -408,7 +408,6 @@ class IngestionService:
             bank_code = tenant.tenant_code.upper()  # BANK001
             ch_tenant_key = tenant.tenant_code.lower()  # bank001
 
-            # ---- Dataset version (optional) ----
             state = DatasetState.objects.filter(
                 bank_code=bank_code, loan_type=loan_type, dataset_type=dataset_type
             ).first()
@@ -452,7 +451,6 @@ class IngestionService:
             batch.invalid_rows = invalid_count
             batch.save(update_fields=["valid_rows", "invalid_rows", "updated_at"])
 
-            # ---- Decision gate (STRICT all-or-nothing) ----
             if invalid_count > 0:
                 return self.handle_validation_failure(
                     batch, invalid_count, errors_to_create

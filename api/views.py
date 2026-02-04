@@ -62,6 +62,9 @@ class TenantResolverMixin:
         return f"{prefix}_{suffix}"
 
     def get_request_body(self, request):
+        """
+        Common request handler method
+        """
         tenant_id = (request.query_params.get("tenant_id") or "").upper()
         loan_type = (request.query_params.get("loan_type") or "").upper()
         dataset_type = (request.query_params.get("dataset_type") or "").upper()
@@ -349,7 +352,6 @@ class ProfilingViewSet(TenantResolverMixin, viewsets.ViewSet):
                 "numeric_stats": numeric_stats,
                 "categorical_stats": categorical_stats,
                 "null_ratio": null_ratio,
-
                 # Backward compatible summary fields for UI cards
                 "avg_amount": amount_stats.get("avg"),
                 "min_amount": amount_stats.get("min"),
