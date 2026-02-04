@@ -17,7 +17,7 @@ class FieldSpec:
 
 CREDIT_FIELDS: list[FieldSpec] = [
     FieldSpec("loan_account_number", "str", required=True),
-    FieldSpec("customer_type", "str"),
+    FieldSpec("customer_type", "category"),
     FieldSpec("customer_id", "str"),
     FieldSpec("loan_product_type", "str"),
     FieldSpec("loan_status_code", "category", required=True),
@@ -48,6 +48,7 @@ CREDIT_FIELDS: list[FieldSpec] = [
     FieldSpec("customer_segment", "str"),
     FieldSpec("internal_rating", "str"),
     FieldSpec("external_rating", "str"),
+    FieldSpec("insurance_included", "category"),
 ]
 
 

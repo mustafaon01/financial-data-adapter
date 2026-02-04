@@ -125,5 +125,15 @@ class NormalizationService:
             return "ACTIVE"
         if s in ["g", "gecikmiş", "gecikmis", "overdue", "delinquent"]:
             return "OVERDUE"
+        if s in ["h", "yes", "y", "true", "evet"]:
+            return "YES"
+        if s in ["e", "no", "n", "false", "hayir"]:
+            return "NO"
+        if s in ["i", "individual", "person"]:
+            return "INDIVIDUAL"
+        if s in ["t"]:
+            return "CORPORATE"
+        if s in ["v"]:
+            return "SME"
 
         return "UNKNOWN"
