@@ -137,5 +137,4 @@ We removed it to keep the setup simple and avoid complex schema migrations.
 ## Storage
 - Postgres keeps latest data for app view
 - ClickHouse keeps current snapshot tables
-- New data replaces old data
-14 directories, 38 files
+- New data replaces old data14 directories, 38 files
