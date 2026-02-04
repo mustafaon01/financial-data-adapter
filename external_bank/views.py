@@ -336,6 +336,26 @@ class CSVUploadView(APIView):
         )
 
 
+def get_request_body(request):
+    """
+    Common request handler method
+    """
+    bank_code = normalize_bank_code(request.query_params.get("bank_code"))
+    loan_type = normalize_loan_type(request.query_params.get("loan_type"))
+    dataset_type = (request.query_params.get("dataset_type") or "").strip().upper()
+
+    if not bank_code or not loan_type:
+        return Response({"error": "bank_code and loan_type are required"}, status=400)
+    if not dataset_type:
+        return Response({"error": "dataset_type is required"}, status=400)
+    if dataset_type not in ALLOWED_DATASET_TYPES:
+        return Response(
+            {"error": f"dataset_type must be one of {sorted(ALLOWED_DATASET_TYPES)}"},
+            status=400,
+        )
+    return bank_code, loan_type, dataset_type
+
+
 class VersionView(APIView):
     """
     Return dataset version.
@@ -347,23 +367,8 @@ class VersionView(APIView):
         """
         GET /external-bank/version/
         """
-        bank_code = normalize_bank_code(request.query_params.get("bank_code"))
-        loan_type = normalize_loan_type(request.query_params.get("loan_type"))
-        dataset_type = (request.query_params.get("dataset_type") or "").strip().upper()
 
-        if not bank_code or not loan_type:
-            return Response(
-                {"error": "bank_code and loan_type are required"}, status=400
-            )
-        if not dataset_type:
-            return Response({"error": "dataset_type is required"}, status=400)
-        if dataset_type not in ALLOWED_DATASET_TYPES:
-            return Response(
-                {
-                    "error": f"dataset_type must be one of {sorted(ALLOWED_DATASET_TYPES)}"
-                },
-                status=400,
-            )
+        bank_code, loan_type, dataset_type = get_request_body(request)
 
         state = DatasetState.objects.filter(
             bank_code=bank_code, loan_type=loan_type, dataset_type=dataset_type
@@ -396,23 +401,7 @@ class CurrentDataView(APIView):
         """
         GET /external-bank/current/
         """
-        bank_code = normalize_bank_code(request.query_params.get("bank_code"))
-        loan_type = normalize_loan_type(request.query_params.get("loan_type"))
-        dataset_type = (request.query_params.get("dataset_type") or "").strip().upper()
-
-        if not bank_code or not loan_type:
-            return Response(
-                {"error": "bank_code and loan_type are required"}, status=400
-            )
-        if not dataset_type:
-            return Response({"error": "dataset_type is required"}, status=400)
-        if dataset_type not in ALLOWED_DATASET_TYPES:
-            return Response(
-                {
-                    "error": f"dataset_type must be one of {sorted(ALLOWED_DATASET_TYPES)}"
-                },
-                status=400,
-            )
+        bank_code, loan_type, dataset_type = get_request_body(request)
 
         try:
             limit = int(request.query_params.get("limit", 1000))
