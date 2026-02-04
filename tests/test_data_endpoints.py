@@ -43,7 +43,11 @@ def test_retail_and_commercial_are_separate(monkeypatch):
 
     res_comm = api.get(
         "/api/data/",
-        data={"tenant_id": "BANK001", "loan_type": "COMMERCIAL", "dataset_type": "CREDIT"},
+        data={
+            "tenant_id": "BANK001",
+            "loan_type": "COMMERCIAL",
+            "dataset_type": "CREDIT",
+        },
     )
     assert res_comm.status_code == 200
     assert res_comm.data["rows"] == [["LOAN_C1"]]
